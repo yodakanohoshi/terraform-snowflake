@@ -14,18 +14,47 @@ Terraform で作ります。作るものは次のとおりです。
 
 ---
 
-## 0. 前提
+## 0. Snowflake アカウントを作成する(まだ持っていない場合)
+
+すでにアカウントがある場合はこの節を飛ばして「1. 前提」へ進んでください。
+
+1. <https://signup.snowflake.com/> にアクセスし、氏名・メールアドレス等を入力します。
+2. **エディション**を選びます。スモークテスト用途なら **Standard** で十分です。
+3. **クラウドプロバイダとリージョン**を選びます(AWS / Azure / Google Cloud)。
+   どれでも動きますが、CI や自分の環境から近いリージョンを選ぶと接続が速くなります。
+   ※ プロバイダ・リージョンは後から変更できません。
+4. 登録すると **30 日間・$400 分の無料トライアルクレジット**が付与されます。
+   本構成はリソースモニター(既定 5 クレジット)で上限を絞っているため、
+   トライアル枠内で余裕を持って収まります。
+5. 確認メールが届くので **「CLICK TO ACTIVATE」** リンクを開き、
+   初期ユーザーのユーザー名とパスワードを設定します。
+   **この初期ユーザーには ACCOUNTADMIN ロールが付与されており**、そのまま本構成の
+   `admin_user` として使えます。
+6. Snowsight(Web UI)にログインできることを確認します。
+   ログイン URL は `https://<アカウント識別子>.snowflakecomputing.com` 形式で、
+   アクティベーションメールにも記載されています。
+7. **アカウント識別子(組織名・アカウント名)を控えます。** 次のいずれかで確認できます。
+   - Snowsight 左下のアカウントメニュー → アカウント名にホバー →
+     **「Copy account identifier」**(`ORGNAME-ACCOUNTNAME` 形式でコピーされる。
+     `-` の前が組織名、後がアカウント名)
+   - SQL で確認:
+     ```sql
+     SELECT CURRENT_ORGANIZATION_NAME(), CURRENT_ACCOUNT_NAME();
+     ```
+
+> **MFA について**: Snowflake はパスワード認証の人間ユーザーに MFA 登録を求めます。
+> 初回ログイン時に案内が出たら登録してください。MFA 有効時、Terraform からの接続は
+> パスワード方式が通らない場合があるため、後述の**キーペア方式(`SNOWFLAKE_JWT`)を推奨**します。
+
+## 1. 前提
 
 - Terraform 1.5 以上(`terraform -version`)
 - ACCOUNTADMIN 相当のロールで接続できる Snowflake ユーザー
   - ウェアハウス・リソースモニター・DB・ユーザー作成に必要
-- アカウント識別子(組織名・アカウント名)。SnowSight 右下のアカウントメニュー、
-  または SQL で確認できます:
-  ```sql
-  SELECT CURRENT_ORGANIZATION_NAME(), CURRENT_ACCOUNT_NAME();
-  ```
+  - 上記 0 で作成した初期ユーザーがそのまま使えます
+- アカウント識別子(組織名・アカウント名)。確認方法は上記 0-7 を参照。
 
-## 1. 接続情報を設定する
+## 2. 接続情報を設定する
 
 `terraform.tfvars.example` をコピーして `terraform.tfvars` を作り、接続先を書きます。
 
@@ -54,7 +83,7 @@ admin_user        = "MY_ADMIN_USER"
 
 > Windows PowerShell の場合は `$env:SNOWFLAKE_PASSWORD='...'` のように設定します。
 
-## 2. 作成する
+## 3. 作成する
 
 ```bash
 terraform init
@@ -62,7 +91,7 @@ terraform plan      # 作成されるものを確認
 terraform apply     # yes で実行
 ```
 
-## 3. GitHub Secrets に登録する
+## 4. GitHub Secrets に登録する
 
 `apply` 後、次の値を `drt-hub/drt` の **Settings → Secrets and variables → Actions** に登録します。
 
@@ -79,7 +108,7 @@ terraform apply     # yes で実行
 `SMOKE_SNOWFLAKE_PRIVATE_KEY` は PKCS#8 PEM(`-----BEGIN PRIVATE KEY-----` で始まる)の
 全文です。改行込みでそのまま貼り付けてください。
 
-## 4. 使い終わったら必ず destroy する
+## 5. 使い終わったら必ず destroy する
 
 ```bash
 terraform destroy   # yes で全消去
