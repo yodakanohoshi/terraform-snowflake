@@ -2,13 +2,15 @@
 #
 #   SMOKE_SNOWFLAKE_ACCOUNT      <- アカウント識別子(ORG-ACCOUNT 形式)
 #   SMOKE_SNOWFLAKE_USER         <- 作成したサービスユーザー
+#   SMOKE_SNOWFLAKE_PASSWORD     <- パスワード認証のパスワード(drt が使う)
 #   SMOKE_SNOWFLAKE_PRIVATE_KEY  <- キーペア認証の秘密鍵(PKCS#8 PEM 全体)
 #   SMOKE_SNOWFLAKE_DATABASE     <- 作成した DB
 #   SMOKE_SNOWFLAKE_SCHEMA       <- 作成したスキーマ
 #   SMOKE_SNOWFLAKE_WAREHOUSE    <- 作成したウェアハウス
 #   SMOKE_SNOWFLAKE_ROLE         <- 付与したロール
 #
-# 秘密鍵の取り出し:
+# 秘匿値の取り出し:
+#   terraform output -raw SMOKE_SNOWFLAKE_PASSWORD
 #   terraform output -raw SMOKE_SNOWFLAKE_PRIVATE_KEY
 
 output "SMOKE_SNOWFLAKE_ACCOUNT" {
@@ -19,6 +21,12 @@ output "SMOKE_SNOWFLAKE_ACCOUNT" {
 output "SMOKE_SNOWFLAKE_USER" {
   description = "テスト実行用に作成したサービスユーザー名。"
   value       = snowflake_user.smoke.name
+}
+
+output "SMOKE_SNOWFLAKE_PASSWORD" {
+  description = "パスワード認証のパスワード。drt はパスワード方式のみ対応のため使う。"
+  value       = random_password.smoke.result
+  sensitive   = true
 }
 
 output "SMOKE_SNOWFLAKE_PRIVATE_KEY" {

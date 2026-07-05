@@ -18,6 +18,19 @@ resource "tls_private_key" "smoke" {
   rsa_bits  = 2048
 }
 
+# ---- テスト実行ユーザー用のパスワード ---------------------------------------
+# drt の Snowflake 接続はパスワード認証のみ対応(private_key 未対応)のため、
+# キーペアと併用でパスワードも付与する。強度は Snowflake 既定ポリシー
+# (8 文字以上・英大文字/小文字/数字を各 1 以上)を満たすよう生成。
+# 記号は env ファイルやシェルでのクォート事故を避けるため使わない。
+resource "random_password" "smoke" {
+  length      = 20
+  special     = false
+  min_lower   = 2
+  min_upper   = 2
+  min_numeric = 2
+}
+
 # ---- コスト上限:リソースモニター -------------------------------------------
 resource "snowflake_resource_monitor" "smoke" {
   name         = var.resource_monitor_name
@@ -107,11 +120,15 @@ resource "snowflake_grant_privileges_to_account_role" "schema" {
   }
 }
 
-# ---- テスト実行ユーザー(キーペア認証・パスワード無し)----------------------
+# ---- テスト実行ユーザー(キーペア認証 + パスワード併用)--------------------
 resource "snowflake_user" "smoke" {
   name         = var.user_name
   comment      = "drt Snowflake smoke test"
   display_name = "drt Snowflake smoke test"
+
+  # drt はパスワード認証のみ対応のため付与する。キーペアと併存でき、
+  # 接続側が渡した資格情報に応じて Snowflake がどちらかで認証する。
+  password = random_password.smoke.result
 
   # tls で生成した公開鍵を PEM ヘッダ/改行を除いた 1 行で登録する。
   rsa_public_key = trimspace(replace(replace(replace(
