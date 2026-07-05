@@ -1,0 +1,24 @@
+# Terraform
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# 秘密鍵・鍵ファイル(絶対にコミットしない)
+*.pem
+*.p8
+*.key
+key.json
+keyfile.json
+*.json
+!*.tf.json

@@ -1,0 +1,23 @@
+# 接続先(必須)。アカウント識別子は SnowSight 右下のアカウントメニュー、
+# または SQL: SELECT CURRENT_ORGANIZATION_NAME(), CURRENT_ACCOUNT_NAME();
+organization_name = "MYORG"
+account_name      = "MYACCOUNT"
+admin_user        = "MY_ADMIN_USER"
+
+# 認証情報は tfvars に書かない。環境変数で渡す:
+#   export SNOWFLAKE_PASSWORD='...'                      # パスワード方式
+#   または
+#   export SNOWFLAKE_AUTHENTICATOR=SNOWFLAKE_JWT         # キーペア方式
+#   export SNOWFLAKE_PRIVATE_KEY="$(cat admin_key.p8)"
+
+# 任意で上書き(既定値あり)
+# admin_role                = "ACCOUNTADMIN"
+# database_name             = "DRT_SMOKE_DB"
+# schema_name               = "DRT_SMOKE"
+# warehouse_name            = "DRT_SMOKE_WH"
+# user_name                 = "DRT_SMOKE_USER"
+# role_name                 = "DRT_SMOKE_ROLE"
+# warehouse_size            = "XSMALL"
+# auto_suspend_seconds      = 60
+# statement_timeout_seconds = 3600
+# monitor_credit_quota      = 5
