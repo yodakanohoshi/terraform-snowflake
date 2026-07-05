@@ -53,6 +53,24 @@ variable "role_name" {
   default     = "DRT_SMOKE_ROLE"
 }
 
+variable "viewer_role_name" {
+  type        = string
+  description = "実機確認用の読み取り専用ロール名。スキーマ内の表/ビューへの SELECT のみ持つ。"
+  default     = "DRT_SMOKE_VIEWER_ROLE"
+}
+
+variable "viewer_user_names" {
+  type        = list(string)
+  description = "drt-smoke のテーブルを参照確認できる既存の Snowflake ユーザー名の一覧(実機確認する人)。ここに挙げたユーザーは Snowflake 上に既に存在している必要がある。tfvars で指定する。"
+  default     = []
+}
+
+variable "sysadmin_role_name" {
+  type        = string
+  description = "カスタムロールをぶら下げる親ロール。Snowflake 推奨のロール階層に従い、既定は SYSADMIN。"
+  default     = "SYSADMIN"
+}
+
 variable "resource_monitor_name" {
   type        = string
   description = "ウェアハウスにだけ紐づけるリソースモニター名(暴走課金の上限)。"

@@ -54,3 +54,8 @@ output "SMOKE_SNOWFLAKE_ROLE" {
   description = "サービスユーザーに付与したロール名。"
   value       = snowflake_account_role.smoke.name
 }
+
+output "SMOKE_SNOWFLAKE_VIEWER_ROLE" {
+  description = "実機確認者に付与した読み取り専用ロール名。確認時は USE ROLE でこれに切り替える。"
+  value       = snowflake_account_role.viewer.name
+}

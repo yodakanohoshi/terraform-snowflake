@@ -25,3 +25,6 @@ admin_user        = "MY_ADMIN_USER"
 # メール通知(任意)。通知先ユーザーは検証済みメール + 通知有効化が必要(README 参照)。
 # monitor_notify_users    = ["TAKUOTSUKA"]
 # monitor_notify_triggers = [80]
+
+# 実機確認(テーブル参照)を許可する既存ユーザー。読み取り専用ロールを付与する。
+# viewer_user_names = ["SOME_USER"]

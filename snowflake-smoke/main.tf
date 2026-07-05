@@ -145,3 +145,115 @@ resource "snowflake_grant_account_role" "smoke" {
   role_name = snowflake_account_role.smoke.name
   user_name = snowflake_user.smoke.name
 }
+
+# ---- 実機確認用:読み取り専用ロール -----------------------------------------
+# 人手での実機確認(テーブル参照)向け。SELECT のみで書き込み・DDL 不可。
+# 書き込み用の smoke ロールとは分離し、確認者に余計な権限を渡さない。
+resource "snowflake_account_role" "viewer" {
+  name    = var.viewer_role_name
+  comment = "drt smoke test read-only role for manual verification"
+}
+
+# SELECT 実行にはウェアハウスが要るので USAGE を付与(OPERATE は不要)。
+# 対象は課金上限付きの smoke ウェアハウスなので暴走課金の心配はない。
+resource "snowflake_grant_privileges_to_account_role" "viewer_warehouse" {
+  account_role_name = snowflake_account_role.viewer.name
+  privileges        = ["USAGE"]
+
+  on_account_object {
+    object_type = "WAREHOUSE"
+    object_name = snowflake_warehouse.smoke.name
+  }
+}
+
+# DB / スキーマの USAGE(オブジェクトを辿るのに必須)。
+resource "snowflake_grant_privileges_to_account_role" "viewer_database" {
+  account_role_name = snowflake_account_role.viewer.name
+  privileges        = ["USAGE"]
+
+  on_account_object {
+    object_type = "DATABASE"
+    object_name = snowflake_database.smoke.name
+  }
+}
+
+resource "snowflake_grant_privileges_to_account_role" "viewer_schema" {
+  account_role_name = snowflake_account_role.viewer.name
+  privileges        = ["USAGE"]
+
+  on_schema {
+    schema_name = snowflake_schema.smoke.fully_qualified_name
+  }
+}
+
+# スキーマ内の表/ビューへ SELECT。既存(all)と将来(future)の両方に付与する。
+# drt はテスト実行時に表を作るので、本命は future 側。
+resource "snowflake_grant_privileges_to_account_role" "viewer_all_tables" {
+  account_role_name = snowflake_account_role.viewer.name
+  privileges        = ["SELECT"]
+
+  on_schema_object {
+    all {
+      object_type_plural = "TABLES"
+      in_schema          = snowflake_schema.smoke.fully_qualified_name
+    }
+  }
+}
+
+resource "snowflake_grant_privileges_to_account_role" "viewer_future_tables" {
+  account_role_name = snowflake_account_role.viewer.name
+  privileges        = ["SELECT"]
+
+  on_schema_object {
+    future {
+      object_type_plural = "TABLES"
+      in_schema          = snowflake_schema.smoke.fully_qualified_name
+    }
+  }
+}
+
+resource "snowflake_grant_privileges_to_account_role" "viewer_all_views" {
+  account_role_name = snowflake_account_role.viewer.name
+  privileges        = ["SELECT"]
+
+  on_schema_object {
+    all {
+      object_type_plural = "VIEWS"
+      in_schema          = snowflake_schema.smoke.fully_qualified_name
+    }
+  }
+}
+
+resource "snowflake_grant_privileges_to_account_role" "viewer_future_views" {
+  account_role_name = snowflake_account_role.viewer.name
+  privileges        = ["SELECT"]
+
+  on_schema_object {
+    future {
+      object_type_plural = "VIEWS"
+      in_schema          = snowflake_schema.smoke.fully_qualified_name
+    }
+  }
+}
+
+# 読み取り専用ロールを実機確認するユーザーへ付与。
+resource "snowflake_grant_account_role" "viewer" {
+  for_each  = toset(var.viewer_user_names)
+  role_name = snowflake_account_role.viewer.name
+  user_name = each.value
+}
+
+# ---- ロール階層:カスタムロールを SYSADMIN 配下へぶら下げる ------------------
+# Snowflake 推奨のロール階層に従い、カスタムロールを SYSADMIN に付与する。
+# こうすると SYSADMIN(および ACCOUNTADMIN)がこれらのロールが所有する
+# オブジェクトを管理できる。ACCOUNTADMIN 直下に孤立したカスタムロールを
+# 作らないのがベストプラクティス。
+resource "snowflake_grant_account_role" "smoke_to_sysadmin" {
+  role_name        = snowflake_account_role.smoke.name
+  parent_role_name = var.sysadmin_role_name
+}
+
+resource "snowflake_grant_account_role" "viewer_to_sysadmin" {
+  role_name        = snowflake_account_role.viewer.name
+  parent_role_name = var.sysadmin_role_name
+}
