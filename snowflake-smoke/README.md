@@ -81,7 +81,47 @@ admin_user        = "MY_ADMIN_USER"
   export SNOWFLAKE_PRIVATE_KEY="$(cat admin_key.p8)"
   ```
 
-> Windows PowerShell の場合は `$env:SNOWFLAKE_PASSWORD='...'` のように設定します。
+> Windows PowerShell の場合はそれぞれ次のように設定します。
+> ```powershell
+> # パスワード方式
+> $env:SNOWFLAKE_PASSWORD = '...'
+>
+> # キーペア方式(-Raw で改行込みの PEM 全体を 1 つの文字列として読み込む)
+> $env:SNOWFLAKE_AUTHENTICATOR = 'SNOWFLAKE_JWT'
+> $env:SNOWFLAKE_PRIVATE_KEY = Get-Content -Raw admin_key.p8
+> ```
+> `-Raw` を付けないと `Get-Content` が行の配列を返し、改行が半角スペースに潰れて
+> PEM が壊れます。環境変数は同じ PowerShell ウィンドウ内でのみ有効なので、
+> `terraform` も同じウィンドウで実行してください。
+
+### キーペアの作成(キーペア方式を使う場合)
+
+管理ユーザー(`admin_user`)用のキーペアを OpenSSL で作成し、公開鍵を Snowflake に登録します。
+※ ここで作るのは **Terraform 実行者(管理ユーザー)用**のキーです。スモークテスト用
+ユーザーのキーペアは Terraform が自動生成するため、手動で作る必要はありません。
+
+1. 秘密鍵(PKCS#8・暗号化なし)と公開鍵を生成します:
+   ```bash
+   openssl genrsa 2048 | openssl pkcs8 -topk8 -inform PEM -out admin_key.p8 -nocrypt
+   openssl rsa -in admin_key.p8 -pubout -out admin_key.pub
+   ```
+   > Windows で `openssl` が無い場合は Git Bash に同梱されています
+   > (`C:\Program Files\Git\usr\bin\openssl.exe`)。
+
+2. 公開鍵を Snowflake に登録します。`admin_key.pub` の
+   `-----BEGIN PUBLIC KEY-----` / `-----END PUBLIC KEY-----` 行を除いた本文を、
+   Snowsight で自分のユーザーに設定します:
+   ```sql
+   ALTER USER MY_ADMIN_USER SET RSA_PUBLIC_KEY='MIIBIjANBgkqh...(admin_key.pub の本文)...';
+   ```
+   登録できたか確認:
+   ```sql
+   DESC USER MY_ADMIN_USER;
+   -- RSA_PUBLIC_KEY_FP に SHA256:... が表示されれば OK
+   ```
+
+3. 秘密鍵 `admin_key.p8` は**リポジトリにコミットせず**、上記の環境変数
+   `SNOWFLAKE_PRIVATE_KEY` で渡します。
 
 ## 3. 作成する
 
@@ -166,8 +206,10 @@ terraform destroy   # yes で全消去
   `SMOKE_SNOWFLAKE_PRIVATE_KEY` は PKCS#8(`BEGIN PRIVATE KEY`)である必要があります。
   本構成の出力はすでに PKCS#8 です。パスフレーズは付けていません。
 
-- **リソースモニターが作れない / frequency エラー**
-  `monitor_start_timestamp` は `YYYY-MM-DD HH:MM` 形式。過去日時で問題ありません。
+- **リソースモニターが作れない(`090263 The specified Start time has already passed.`)**
+  `monitor_start_timestamp` に過去の日時を指定すると、このエラーで失敗します。
+  既定は `IMMEDIATELY`(apply 時点から計測開始)なので通常はそのままで問題ありません。
+  日時を固定したい場合は `YYYY-MM-DD HH:MM` 形式で**未来**を指定してください。
 
 ---
 

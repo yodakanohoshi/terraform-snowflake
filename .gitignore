@@ -18,6 +18,7 @@ terraform.rc
 *.pem
 *.p8
 *.key
+*.pub
 key.json
 keyfile.json
 *.json

@@ -87,6 +87,6 @@ variable "monitor_credit_quota" {
 
 variable "monitor_start_timestamp" {
   type        = string
-  description = "リソースモニターの計測開始時刻。過去日時でよい(MONTHLY で毎月リセット)。"
-  default     = "2025-01-01 00:00"
+  description = "リソースモニターの計測開始時刻。既定の IMMEDIATELY は「apply 時点」を意味し(MONTHLY で毎月リセット)、過去日時を弾くアカウントでも失敗しない。日時を固定したい場合は YYYY-MM-DD HH:MM 形式かつ未来を指定する。"
+  default     = "IMMEDIATELY"
 }
