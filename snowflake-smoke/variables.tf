@@ -90,3 +90,17 @@ variable "monitor_start_timestamp" {
   description = "リソースモニターの計測開始時刻。既定の IMMEDIATELY は「apply 時点」を意味し(MONTHLY で毎月リセット)、過去日時を弾くアカウントでも失敗しない。日時を固定したい場合は YYYY-MM-DD HH:MM 形式かつ未来を指定する。"
   default     = "IMMEDIATELY"
 }
+
+# ---- メール通知 -------------------------------------------------------------
+
+variable "monitor_notify_users" {
+  type        = list(string)
+  description = "クレジット到達時にメール通知する Snowflake ユーザー名の一覧。各ユーザーは検証済みメールアドレスを持ち、通知を有効化している必要がある。空なら通知先なし。"
+  default     = []
+}
+
+variable "monitor_notify_triggers" {
+  type        = list(number)
+  description = "『停止はせず通知だけ』を送るクレジット消費率(%)の一覧。例 [50, 80] で 50% と 80% で通知。停止トリガー(90/100%)到達時は常に通知される。"
+  default     = [80]
+}

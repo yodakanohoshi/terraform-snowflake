@@ -29,6 +29,12 @@ resource "snowflake_resource_monitor" "smoke" {
   # クォータの 90% で新規クエリ受付を停止、100% で実行中クエリも即キャンセル。
   suspend_trigger           = 90
   suspend_immediate_trigger = 100
+
+  # メール通知:notify_triggers(%) 到達で「停止せず通知だけ」を送る。
+  # 停止トリガー(90/100%)到達時も notify_users に通知される。
+  # 通知が届くには各ユーザーが検証済みメール + 通知有効化済みであること。
+  notify_triggers = var.monitor_notify_triggers
+  notify_users    = var.monitor_notify_users
 }
 
 # ---- コンピュート:ウェアハウス ---------------------------------------------

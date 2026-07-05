@@ -178,6 +178,29 @@ terraform destroy   # yes で全消去
   クレジット(既定 5)に達したら 90% で新規クエリ停止、100% で即キャンセルします。
 - アカウント全体ではなく当該ウェアハウスだけを対象にするので、**他のウェアハウスには影響しません**。
 
+### メール通知(任意)
+クレジット消費が一定割合に達したらメールで知らせられます。tfvars で設定します。
+
+```hcl
+monitor_notify_users    = ["TAKUOTSUKA"]   # 通知を受け取る Snowflake ユーザー名
+monitor_notify_triggers = [80]             # 何 % で「通知だけ」を送るか(複数可: [50, 80])
+```
+
+- `monitor_notify_triggers` は**停止を伴わない通知**のしきい値です。停止トリガー
+  (90% 新規停止 / 100% 即キャンセル)に達したときも `monitor_notify_users` に通知されます。
+- **通知が届くための前提**(これが無いとメールは飛びません):
+  1. 対象ユーザーに**検証済みメールアドレス**が設定されていること。
+     ```sql
+     ALTER USER TAKUOTSUKA SET EMAIL = 'you@example.com';
+     ```
+     設定後、届く確認メールのリンクからメールアドレスを**検証**します
+     (Snowsight: 右上のユーザー → Profile からも設定・確認可)。
+  2. そのユーザーが**通知を有効化**していること
+     (Snowsight: Profile → Notifications を ON)。
+  3. 通知はアカウント管理者(ACCOUNTADMIN)ロールを持つユーザー向けの機能です。
+     本構成の `admin_user` はこれに該当します。
+- `monitor_notify_users` を空(既定)にすると通知先なしで、しきい値による停止だけが働きます。
+
 ### すべて Terraform 管理
 - 手動で作った野良リソースが無いため、`terraform destroy` で漏れなく消えます。
 - destroy 後に念のため確認する場合:

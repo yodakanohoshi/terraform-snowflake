@@ -21,3 +21,7 @@ admin_user        = "MY_ADMIN_USER"
 # auto_suspend_seconds      = 60
 # statement_timeout_seconds = 3600
 # monitor_credit_quota      = 5
+
+# メール通知(任意)。通知先ユーザーは検証済みメール + 通知有効化が必要(README 参照)。
+# monitor_notify_users    = ["TAKUOTSUKA"]
+# monitor_notify_triggers = [80]
